@@ -1,7 +1,8 @@
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "server.h"
 
-usage(){
+void usage(){
   printf("usage : servmulti numero_port_serveur\n");
 }
 
@@ -15,4 +16,7 @@ int main (int argc,char *argv[]){
    }
 
   serv(atoi(argv[1]));
+
+
+  return 0;
 }
