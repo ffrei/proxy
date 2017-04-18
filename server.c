@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <sys/select.h>
 #include "server.h"
+#include "client.h"
 
 
 /*********************************************************************
@@ -32,33 +33,6 @@
  *     write()                                                       *
  *                                                                   *
  *********************************************************************/
-
-
-
-#define BUFSIZE 1500
-int str_echo (int sockfd)
-{
-  int nrcv, nsnd;
-  char msg[BUFSIZE];
-
-  /*    * Attendre  le message envoye par le client
-   */
-  memset( (char*) msg, 0, sizeof(msg) );
-  if ( (nrcv= read ( sockfd, msg, sizeof(msg)-1) ) < 0 )  {
-    perror ("servmulti : : readn error on socket");
-    exit (1);
-  }
-  msg[nrcv]='\0';
-  printf ("servmulti :message recu=%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
-
-  if ( (nsnd = write (sockfd, msg, nrcv) ) <0 ) {
-    printf ("servmulti : writen error on socket");
-    exit (1);
-  }
-  printf ("nsnd = %d \n", nsnd);
-  return (nsnd);
-} /* end of function */
-
 
 
 int serv(int numPort)
@@ -146,7 +120,7 @@ FD_SET(sockfd,&rset);
        if(((sockcli=tab_clients [i])>=0) && FD_ISSET(tab_clients[i],&pset)){
            //Pbem si FD_ISSET avec -1
            //Le client a envoye une donnee a traiter
-           if (str_echo(sockcli)==0){
+           if (proxy(sockcli)==0){
                //le client a ferme sa connexion
                //Fermer le socket de dialogue
                close(sockcli);
