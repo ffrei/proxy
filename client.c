@@ -9,8 +9,9 @@
 
 
 
-int main(int argc, char **argv) {
-
+int proxy(int sockfd) {
+  return(0);
+/*
     int clientSocket;
     struct sockaddr_in serv_addr;
 
@@ -30,5 +31,5 @@ int main(int argc, char **argv) {
     }
 
     return(0);
-
+*/
 }

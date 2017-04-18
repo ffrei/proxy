@@ -64,7 +64,7 @@ int str_echo (int sockfd)
 int serv(int numPort)
 
 {
-  int sockfd, n, newsockfd, childpid, servlen,fin;
+  int sockfd, newsockfd;
   struct sockaddr_in  serv_addr, cli_addr;
   socklen_t clilen;
   int tab_clients[FD_SETSIZE];
