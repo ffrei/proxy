@@ -7,39 +7,31 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <errno.h> //For errno - the error number
+#include <netdb.h> //hostent
 
 
-#define BUFSIZE 1500
+#define BUFSIZE 1001
 
 int proxy(int sockfd) {
   int nrcv, nsnd ,i;
   char msg[BUFSIZE];
-  char adress[BUFSIZE];
+  char msgCpy[BUFSIZE];
+  char* hostname,*tmp;
 
   /*   Attendre  le message envoye par le client   */
   memset( (char*) msg, 0, sizeof(msg) );
-  if ( (nrcv= read ( sockfd, msg, sizeof(msg)-1) ) < 0 )  {
-    perror ("servmulti : readn error on socket");
-    exit (1);
-  }
-  msg[nrcv]='\0';
+  while ( (nrcv= read ( sockfd, msg, sizeof(msg)-1) ) > 0 )  {
+
+  //msg[nrcv]='\0';
   //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
 
-  for ( i = 0; i < nrcv; i++) {
-    if( msg[i]=='G'  && i<nrcv-4 ){
-      if(msg[i+1]=='E' && msg[i+2]=='T' && msg[i+3]==' '){
+  strcpy(msgCpy,msg);
+  hostname=strstr(msgCpy,"http://")+7;  // decalage de 7 pour ne pas avoir le http://
+  tmp =strchr(hostname,'/');
+  tmp[0]='\0';
 
-        int j =0 ;
-        while (msg[i+4+j]!=' ' && j < nrcv ) {
-            adress[j]=msg[i+4+j];
-            j++;
-        }
-        msg[i+4+j]='\0';
-      }
-    }
-  }
-
-  printf("adresse : %s\n", adress);
+  printf("adresse : %s\n", hostname);
 
 
 
@@ -51,10 +43,30 @@ int proxy(int sockfd) {
       exit(1);
   }
 
+  struct addrinfo hints, *res;
+  struct in_addr addr;
+  int err;
+  char ip[20];
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_family = AF_UNSPEC;
+
+  if ((err = getaddrinfo(hostname, NULL, &hints, &res)) != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
+    exit(EXIT_FAILURE);
+  }
+
+  addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
+  strcpy(ip, inet_ntoa(addr));
+  printf("%s resolved to %s\n" , hostname , ip);
+
   bzero((char*)&serv_addr, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons((ushort)80);
-  serv_addr.sin_addr.s_addr = inet_addr("172.217.6.35");
+  serv_addr.sin_addr.s_addr = inet_addr(ip);
+
+  freeaddrinfo(res);
 
 /*
   serv_addr.sin_port = htons((ushort)atoi(argv[2]));
@@ -70,25 +82,66 @@ int proxy(int sockfd) {
     exit (1);
   }
 
+  //recuperation header + debut du message
+  nrcv= read ( clientSocket, msg, sizeof(msg)-1);
+  if ( nrcv < 0 )  {
+    perror ("servmulti : readn error on socket");
+    exit (1);
+  }else{
+    //msg[nrcv]='\0';
+  }
 
-  memset( (char*) msg, 0, sizeof(msg) );
+  //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
+
+/*  char *ret;
+
+  ret = strstr(msg,"Content-Length");
+  ret+=16;
+
+  int msgSize = atoi(ret);
+printf("======================================\n" );
+
+  int headerSize=0;
+  char *body;
+  body = strstr(msg, "\r\n\r\n");
+printf("======================================\n" );
+  if(body){
+      headerSize= body-msg;
+  }
+
+  printf("headerSize:%d\n",headerSize );
+  msgSize += headerSize;
+*/
+  if ( (nsnd = write (sockfd, msg, nrcv) ) <0 ) {
+    printf ("servmulti : writen error on socket");
+    exit (1);
+  }
+  int amountReadt = nrcv;
   do{
+    memset( (char*) msg, 0, sizeof(msg) );
+    printf("======================================bla\n" );
     nrcv= read ( clientSocket, msg, sizeof(msg)-1);
     if ( nrcv < 0 )  {
       perror ("servmulti : readn error on socket");
       exit (1);
     }else{
-      msg[nrcv]='\0';
       //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
       if ( (nsnd = write (sockfd, msg, nrcv) ) <0 ) {
         printf ("servmulti : writen error on socket");
-        exit (1);
       }
-      memset( (char*) msg, 0, sizeof(msg) );
     }
+    printf("======================================\n" );
+  }while ( nrcv>0 );
+  //write (sockfd, '\0', 1);
+  close(clientSocket);
 
-  }while ( nrcv == BUFSIZE-1);
+}
 
+if(nrcv < 0){
+  perror ("servmulti : readn error on socket");
+  exit (1);
+}
 
+  //write (sockfd, '\0', 1);
   return(0);
 }
