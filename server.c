@@ -41,12 +41,6 @@ int serv(int numPort)
   int sockfd, newsockfd;
   struct sockaddr_in  serv_addr, cli_addr;
   socklen_t clilen;
-  int tab_clients[FD_SETSIZE];
-  fd_set rset,pset;
-  int maxfdp1, nbfd,i,sockcli;
-
-
-
 
 /*
  * Ouvrir une socket (a TCP socket)
@@ -77,61 +71,23 @@ if ((sockfd = socket(PF_INET, SOCK_STREAM, 0)) <0) {
    exit (1);
  }
 
-//Init multi client
-maxfdp1 = sockfd+1;
-for (i=0;i<FD_SETSIZE;i++) tab_clients[i] = -1;
-FD_ZERO(&rset);
-FD_ZERO(&pset) ;
-FD_SET(sockfd,&rset);
-
 
  for (;;) {
-   pset = rset;
-   nbfd = select(maxfdp1,&pset,NULL,NULL,NULL);
-   if (FD_ISSET(sockfd,&pset))
-       //Une demande de connexion a �t� �mise par un client
-   {
-       clilen = sizeof(cli_addr);
-       newsockfd = accept(sockfd,(struct sockaddr*) &cli_addr,&clilen);
-       if (newsockfd < 0) {
-        perror("servmulti : erreur accept\n");
-        exit (1);
-       }
-
-       //Recherche d'une place libre dans le tableau
-       i=0;
-       while ((i<FD_SETSIZE) && (tab_clients[i]>=0)) i++;
-       if (i==FD_SETSIZE) exit(1);
-
-       //ajout du nouveau client dans le tableau des clients
-       tab_clients[i] = newsockfd;
-       //Ajout du nouveau client dans rset
-       FD_SET(newsockfd, &rset);
-       //Positionner maxfdp1
-       if(newsockfd>=maxfdp1) {
-           maxfdp1=newsockfd+1;
-       }
-       nbfd--;
+   clilen = sizeof(cli_addr);
+   //Une demande de connexion a �t� �mise par un client
+   newsockfd = accept(sockfd,(struct sockaddr*) &cli_addr,&clilen);
+   if (newsockfd < 0) {
+    perror("servmulti : erreur accept\n");
+    exit (1);
    }
-   //Parcourir le tableau des clients connectes
-   i=0;
-   while ((nbfd>0)&&(i<FD_SETSIZE))
-   {
-       if(((sockcli=tab_clients [i])>=0) && FD_ISSET(tab_clients[i],&pset)){
-           //Pbem si FD_ISSET avec -1
-           //Le client a envoye une donnee a traiter
-           if (proxy(sockcli)==0){
-               //le client a ferme sa connexion
-               //Fermer le socket de dialogue
-               close(sockcli);
-               //Supprimer socket de dialogue dans le tableau des clients
-               tab_clients[i]=-1;
-               //supprimer socket de dialogue client dans rset;
-               FD_CLR(sockcli,&rset);
-       }
-       nbfd--;
-       }
-       i++;
+
+   int pid = fork();
+
+   if(pid ) {
+     close(newsockfd);
+   }else{
+     proxy(newsockfd);
+     exit(0);
    }
  }
 }
