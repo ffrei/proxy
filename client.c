@@ -11,10 +11,10 @@
 #include <netdb.h> //hostent
 
 
-#define BUFSIZE 1001
+#define BUFSIZE 512
 
 int proxy(int sockfd) {
-  int nrcv, nsnd ,i;
+  int nrcv, nsnd;
   char msg[BUFSIZE];
   char msgCpy[BUFSIZE];
   char* hostname,*tmp;
@@ -83,6 +83,8 @@ int proxy(int sockfd) {
   }
 
   //recuperation header + debut du message
+  printf("=========recuperation de la 1ere trame==========\n" );
+  memset( (char*) msg, 0, sizeof(msg) );
   nrcv= read ( clientSocket, msg, sizeof(msg)-1);
   if ( nrcv < 0 )  {
     perror ("servmulti : readn error on socket");
@@ -93,48 +95,70 @@ int proxy(int sockfd) {
 
   //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
 
-/*  char *ret;
+ char *ret;
 
   ret = strstr(msg,"Content-Length");
+  if(!ret){
+    perror ("servmulti : no Content-Length");
+    exit (1);
+  }
   ret+=16;
 
   int msgSize = atoi(ret);
-printf("======================================\n" );
+
 
   int headerSize=0;
   char *body;
   body = strstr(msg, "\r\n\r\n");
-printf("======================================\n" );
+
   if(body){
       headerSize= body-msg;
   }
 
   printf("headerSize:%d\n",headerSize );
   msgSize += headerSize;
-*/
+
   if ( (nsnd = write (sockfd, msg, nrcv) ) <0 ) {
     printf ("servmulti : writen error on socket");
     exit (1);
   }
-  int amountReadt = nrcv;
-  do{
+
+  int finished=0;
+  if(strchr(msg,'\0')){
+    finished=1;
+  }
+
+
+  //msg[nrcv]='\0';
+  //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
+  int amountReadt=nrcv;
+  while ( !finished ){
+    printf("%d\n",nrcv );
     memset( (char*) msg, 0, sizeof(msg) );
-    printf("======================================bla\n" );
+    printf("============attente d'un nieme trame ===========\n" );
     nrcv= read ( clientSocket, msg, sizeof(msg)-1);
+
+    if(strchr(msg,'\0')){
+      finished=1;
+    }
+
+    amountReadt+=nrcv;
     if ( nrcv < 0 )  {
       perror ("servmulti : readn error on socket");
       exit (1);
     }else{
-      //printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
       if ( (nsnd = write (sockfd, msg, nrcv) ) <0 ) {
         printf ("servmulti : writen error on socket");
       }
-    }
-    printf("======================================\n" );
-  }while ( nrcv>0 );
-  //write (sockfd, '\0', 1);
-  close(clientSocket);
 
+//      msg[nrcv]='\0';
+//      printf ("servmulti :message recu:\n%s du processus %d nrcv = %d \n",msg,getpid(), nrcv);
+
+    }
+
+  }
+  printf("==============fin de la com=================\n" );
+  close(clientSocket);
 }
 
 if(nrcv < 0){
