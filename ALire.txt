@@ -1,0 +1,3 @@
+Modifs à faire:
+dans le terminal: export LD_LIBRARY_PATH=/usr/local/lib/
+compilation : gcc -Wall -o adBloc adBloc.c -L/home/bulle/Bureau/proxy/myhtml-4.0.0/lib -lmyhtml-4.0.0

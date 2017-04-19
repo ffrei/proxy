@@ -1,0 +1,84 @@
+var sas = sas || {};
+sas.utils = sas.utils || {};
+if (!sas.utils.cdns) {
+  sas.utils.cdns = {
+    "http:" : "http://ak-ns.sascdn.com",
+    //"http:" : "http://demo.smartadserver.com",
+    "https:" : "https://ec-ns.sascdn.com"
+  }
+}
+
+var sas=sas||{};sas.utils=sas.utils||{};sas.events=sas.events||{};sas.rev=sas.rev||20110214;(function(){if(!sas.utils.cdns){sas.utils.cdns={"http:":"http://ak-ns.sascdn.com","https:":"https://ec-ns.sascdn.com"}}else{if(!sas.utils.cdns["http:"]||sas.utils.cdns["http:"].length==0){sas.utils.cdns["http:"]="http://ak-ns.sascdn.com"}if(!sas.utils.cdns["https:"]||sas.utils.cdns["https:"].length==0){sas.utils.cdns["https:"]="https://ec-ns.sascdn.com"}}var e=function(){};sas.utils.getIEVersion=function(){var g=navigator.userAgent.match(/(?:MSIE |Trident\/.*; rv:)(\d+)/);return g?parseInt(g[1]):undefined};sas.events.addEvent=function(h,g,i){if(!h||!g||!i){return}if(h.attachEvent){h.attachEvent("on"+g,i)}else{if(h.addEventListener){h.addEventListener(g,i,false)}}return{removeEvent:function(){if(h.detachEvent){h.detachEvent("on"+g,i)}else{if(h.removeEventListener){h.removeEventListener(g,i,false)}}}}};sas.events.addLoadEvent=function(h,l){if(!h||!l){return}var g="load";var i=function(){return true};var k=sas.utils.getIEVersion();if(k<11||h==document){g="readystatechange";i=function(){if(!h.readyState||h.readyState=="complete"||h.readyState=="loaded"||h.readyState==4){return true}}}var j=sas.events.addEvent(h,g,function(){if(i()){j.removeEvent();l.apply(this,arguments)}})};sas.utils.Latch=function(n){n=n||[];var m=[];var l={};var k=n;var h=false;for(var j=0;j<k.length;j++){l[n[j]]={}}var o=function(){if(h){return}for(var p in l){if(!l[p].status){return}}h=true;var r=g();for(var q=0;q<m.length;q++){m[q].apply(this,r)}};var g=function(){var q=[];for(var p=0;p<k.length;p++){q.push(l[k[p]].result)}return q};this.notify=function(p,i){if(!l[p]){return}else{l[p].status=true;l[p].result=i;o()}};this.addListener=function(i){if(i!=null){h?i():m.push(i)}};o()};sas.utils._libs=sas.utils._libs||{};var b=function(h,g){if(h.charAt(h.length-1)=="/"){h=h.slice(0,-1)}if(g.charAt(0)=="/"){g=g.slice(1)}return h+"/"+g};var c=function(h){if(typeof h==="string"){h=[h]}var k=(document.location.protocol=="https:");var g=k?sas.utils.cdns["https:"]:(sas.utils.cdns[document.location.protocol]||sas.utils.cdns["http:"]);for(var j=0;j<h.length;j++){h[j]=b(g,h[j])}return h};sas.utils.loadLinkCdn=function(g){g=c(g);for(var h=0;h<g.length;h++){a(g[h],true)}};sas.utils.loadScriptCdn=function(g,h){g=c(g);sas.utils.loadScript(g,h)};var f=Math.floor(Math.random()*1000000);var d=1;sas.utils._callbacks=sas.utils._callbacks||{};var a=function(k,h,g,j){var l=(h?"link":"script")+"-"+f+"-"+d++;var i=document.createElement(h?"link":"script");i.id=l;i.setAttribute("type",h?"text/css":"text/javascript");i.setAttribute(h?"href":"src",k);if(h){i.setAttribute("rel","stylesheet")}if(!h&&g){i.setAttribute("async","true")}sas.utils._libs[k]={loaded:false,callbacks:[]};if(j!=null){sas.utils._libs[k].callbacks.push(j)}sas.utils._callbacks[l]=(function(m){return function(){sas.utils._libs[m].loaded=true;for(var n=0;n<sas.utils._libs[m].callbacks.length;n++){sas.utils._libs[m].callbacks[n]()}}})(k);if(h||g){document.getElementsByTagName("head")[0].appendChild(i);sas.events.addLoadEvent(document.getElementById(l),sas.utils._callbacks[l])}else{document.write(i.outerHTML);document.write("<script type='text/javascript'>(function() { sas.utils._callbacks['"+l+"'](); })();<\/script>")}};sas.utils.loadScript=function(h,j){j=j||{};j.async=j.async==null?true:j.async;var l=j.onLoad||e;if(typeof h==="string"){h=[h]}var m=new sas.utils.Latch(h);m.addListener(l);for(var k=0;k<h.length;k++){var n=h[k];var g=(function(i){return function(){m.notify(i)}})(n);if(!sas.utils._libs[n]){a(n,false,j.async,g)}else{if(sas.utils._libs[n].loaded){m.notify(n)}else{sas.utils._libs[n].callbacks.push(g)}}}}})();
+
+(function() {
+
+var tag = document.getElementById('sas_291');
+if (!tag) {
+  document.write("<div id='sas_291'></div>");
+} else {
+  /* Pre-create something in the DOM to have the sas_loadHandler to work */
+  var d = document.createElement("div");
+  d.style.display = "none";
+  tag.appendChild(d);
+}
+
+var sas = window.sas;
+// used to detect ajax call for pubj
+var isAsync = window.sas_ajax || false;
+
+// Config 
+var config = {
+        id: 6627060,
+        formatId: 291,
+        tagId: "sas_291",
+        instanceIndex: 1,
+        customScript: '',
+        forcedIframeWidth: 0,
+        forcedIframeHeight: 0,
+        oba: 0,
+        creatives:
+        [{
+          id: '18751576',
+          type: 0,
+          url: '',
+          countUrl: '',
+          clickUrl: 'http://securite.01net.com/click?imgid=18751576&insid=6627060&pgid=45414&uid=6234263989375149083&tgt=%24dt%3d1t%3b%24iab%3d19t%3b%24dt%3d1t%3bamznslots%3d%3b%24mct%3d1t%3bdmp5%3d66%3b%24hc&systgt=%24qc%3d1307971523%3b%24ql%3dmedium%3b%24qpc%3d75001%3b%24qpp%3d0%3b%24qt%3d184_1903_42652t%3b%24dma%3d0%3b%24b%3d16570%3b%24o%3d99999&pgDomain=http%3a%2f%2fwww.01net.com%2f&go=',
+          clickTarget: '_blank',
+          clickUrlArray: ["http://securite.01net.com/click?imgid=18751576&insid=6627060&pgid=45414&uid=6234263989375149083&tgt=%24dt%3d1t%3b%24iab%3d19t%3b%24dt%3d1t%3bamznslots%3d%3b%24mct%3d1t%3bdmp5%3d66%3b%24hc&systgt=%24qc%3d1307971523%3b%24ql%3dmedium%3b%24qpc%3d75001%3b%24qpp%3d0%3b%24qt%3d184_1903_42652t%3b%24dma%3d0%3b%24b%3d16570%3b%24o%3d99999&pgDomain=http%3a%2f%2fwww.01net.com%2f&go="],
+          width: '728',
+          height: '90',
+          pixelRatio: '1',
+          altText: '',
+          creativeScript: '<scr'+'ipt type="text/javascript" src="https://ww856.smartadserver.com/ac?pgid=294974&insid=6653780&tmstp=9047043991&out=js&clcturl=http%3a%2f%2fsecurite.01net.com%2fdiffx%2fcountgo%3f6627060%3b45414%3b6234263989375149083%3b9047043991%3bs%3btarget%3d%2524dt%253d1t%253b%2524iab%253d19t%253b%2524dt%253d1t%253bamznslots%253d%3bsystemtarget%3d%2524qc%253d1307971523%253b%2524ql%253dmedium%253b%2524qpc%253d75001%253b%2524qpp%253d0%253b%2524qt%253d184_1903_42652t%253b%2524dma%253d0%253b%2524b%253d16570%253b%2524o%253d99999%3b18751576%3bURL%3d"></scr'+'ipt>\r\n'+'<scr'+'ipt src="https://z.moatads.com/nextregiesas500404969819/moatad.js#moatClientLevel1=58964&moatClientLevel2=1207196&moatClientLevel3=6627060 &moatClientLevel4=18751576&moatClientSlicer1=7270&moatClientSlicer2=45414&moatClientSlicer3=291" type="text/javascript"></scr'+'ipt>',
+          flashVars: '',
+          version: '',
+          wMode: 'Opaque',
+          backupImage: {
+            id: '18751577',
+            type: 1,
+            url: 'https://ww856.smartadserver.com/ac?pgid=294974&insid=6653780&tmstp=[timestamp]&out=nonrich',
+            clickUrl: 'http://securite.01net.com/click?imgid=18751577&insid=6627060&pgid=45414&uid=6234263989375149083&tgt=%24dt%3d1t%3b%24iab%3d19t%3b%24dt%3d1t%3bamznslots%3d%3b%24mct%3d1t%3bdmp5%3d66%3b%24hc&systgt=%24qc%3d1307971523%3b%24ql%3dmedium%3b%24qpc%3d75001%3b%24qpp%3d0%3b%24qt%3d184_1903_42652t%3b%24dma%3d0%3b%24b%3d16570%3b%24o%3d99999&pgDomain=http%3a%2f%2fwww.01net.com%2f&go=https%3a%2f%2fww856.smartadserver.com%2fac%3fjump%3d1%26pgid%3d294974%26insid%3d6653780%26tmstp%3d%5btimestamp%5d%26out%3dnonrich',
+            clickTarget: '_blank',
+            width: '1',
+            height: '1',
+            altText: ''
+          }
+        }]
+      };
+
+if(sas.utils.getIEVersion() < 10 && !isAsync){
+// IE9- require full script injection in sync case.
+  
+  
+  
+  sas.banner.render(config, {async: isAsync});
+}else{
+  sas.utils.loadScriptCdn("/diff/templates/js/sas/sas-browser.js", { async: isAsync, onLoad: function() {
+    sas.utils.loadScriptCdn("/diff/templates/js/sas/sas-dom.js", { async: isAsync, onLoad: function() {
+    sas.utils.loadScriptCdn("/diff/templates/js/banner/sas-banner-2.3.js", { async: isAsync, onLoad: function() {
+      sas.banner.render(config, {async: isAsync});
+    }});
+  }});
+}});
+}
+})();
