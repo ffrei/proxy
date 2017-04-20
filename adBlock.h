@@ -8,8 +8,8 @@
 
 #include "myhtml-4.0.0/examples/myhtml/example.h"
 
-#ifndef ADBLOC_H_INCLUDED
-#define ADBLOC_H_INCLUDED
+#ifndef ADBLOCK_H_INCLUDED
+#define ADBLOCK_H_INCLUDED
 
 char* cleanAd(char* data, size_t size);
 
