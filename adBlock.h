@@ -11,6 +11,6 @@
 #ifndef ADBLOC_H_INCLUDED
 #define ADBLOC_H_INCLUDED
 
-char* cleanAd(struct res_html data);
+char* cleanAd(char* data, size_t size);
 
 #endif

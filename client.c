@@ -10,19 +10,23 @@
 #include <unistd.h>
 #include <errno.h> //For errno - the error number
 #include <netdb.h> //hostent
+#include "adBlock.h"
 
-
-#define BUFSIZE 1024
-#define LOG 1 // 0 -> pas tout les logs ; 1 log activé
+#define BUFSIZE 2048
+#define LOG 0 // 0 -> pas tout les logs ; 1 log activé
+#define TIMEOUT 15
 
 int proxy(int clientfd) {
   int nrcvServ,nrcvClient, nsndServ, nsndClient , msgSize;
   char msg[BUFSIZE];
   char msgCpy[BUFSIZE];
-  char* hostname,*tmp,*msgAll;
-
+  char *hostname,*tmp,*msgAll ,*url;
+  printf("#####%d#####\n",getpid() );
   do{
-    printf("############Waiting For Client  ##############\n" );
+    if(LOG){
+        printf("#####%d####### Waiting For Client  ##############\n",getpid() );
+    }
+
     memset( (char*) msg, 0, BUFSIZE );
     nrcvClient= read ( clientfd, msg, BUFSIZE-1) ;
 
@@ -40,15 +44,16 @@ int proxy(int clientfd) {
     }
 
     strcpy(msgCpy,msg);
-    hostname=strstr(msgCpy,"http://")+7;  // decalage de 7 pour ne pas avoir le http://
+    url=strstr(msgCpy,"http://");
+    tmp =strstr(url,"HTTP/1");
+    tmp[0]='\0';
+    hostname=url+7;  // decalage de 7 pour ne pas avoir le http://
     if(! hostname ){
       fprintf(stderr, "servmulti: ce n'est pas une requete http\n");
       return 1;
     }
     tmp =strchr(hostname,'/');
     tmp[0]='\0';
-
-    printf("adresse : %s\n", hostname);
 
     int serverfd;
     struct sockaddr_in serv_addr;
@@ -68,13 +73,16 @@ int proxy(int clientfd) {
     hints.ai_family = AF_UNSPEC;
 
     if ((err = getaddrinfo(hostname, NULL, &hints, &res)) != 0) {
-      fprintf(stderr, "servmulti: %s\n", gai_strerror(err));
+      fprintf(stderr, "servmulti %s: %s\n",hostname, gai_strerror(err));
       exit(EXIT_FAILURE);
     }
 
     addr.s_addr = ((struct sockaddr_in *)(res->ai_addr))->sin_addr.s_addr;
     strcpy(ip, inet_ntoa(addr));
-    printf("%s resolved to %s\n" , hostname , ip);
+    if(LOG){
+        printf("%d:%s resolved to %s\n" ,getpid(), hostname , ip);
+    }
+
 
     bzero((char*)&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -105,22 +113,24 @@ int proxy(int clientfd) {
     /* Watch stdin (fd 0) to see when it has input. */
     FD_ZERO(&rfds);
     FD_SET(serverfd, &rfds);
-    /* Wait up to 5 seconds. */
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
 
     do{
-       retval = select(serverfd+1, &rfds, NULL, NULL, &tv);
-       /* Don’t rely on the value of tv now! */
-       if (retval == -1){
-         perror("select()");
-       }else if (!retval){
-         printf("No data within 5 seconds.\n");
-         nrcvServ=0;
-       }else{
+        tv.tv_sec = TIMEOUT;
+        tv.tv_usec = 0;
+        retval = select(serverfd+1, &rfds, NULL, NULL, &tv);
+         /* Don’t rely on the value of tv now! */
+         if (retval == -1){
+           perror("select()");
+         }else if (!retval){
+           printf("%d: timed out : %s current size : %d\n",getpid(),url,msgSize);
+           nrcvServ=0;
+         }else{
          /* FD_ISSET(0, &rfds) will be true. */
 
-         printf("############ Waiting For Server  ##############\n" );
+         if(LOG){
+            printf("#####%d####### Waiting For Server  ########%d######\n",getpid(),msgSize );
+         }
+
          memset( (char*) msg, 0, BUFSIZE   );
          nrcvServ= read ( serverfd, msg, BUFSIZE-1) ;
          if ( nrcvServ < 0 )  {
@@ -128,7 +138,7 @@ int proxy(int clientfd) {
            return (1);
          }else{
            msgSize+=nrcvServ;
-           printf("New size  : %d \n",msgSize );
+           //printf("New size  : %d \n",msgSize );
            char* tmp_msgAll= (char*)realloc(msgAll,msgSize * sizeof(char));
            if(tmp_msgAll==NULL){
              printf("The re-allocation of array a has failed");
@@ -142,6 +152,23 @@ int proxy(int clientfd) {
        }
      }while(nrcvServ>0);
 
+     if( msgSize < 100 ){
+       msgAll="HTTP/1.1 500 Internal Server Error \r\n";
+       msgSize=strlen(msgAll);
+     }
+     //msgAll[msgSize]='\0';
+
+     if( strstr(msgAll,"Content-Type: text/html") ){
+       char * data= strstr(msgAll,"<!DOCTYPE html>");
+       if(data){
+         char* res=cleanAd(data,msgSize-(data-msgAll));
+         if(res){
+           printf("============out : ==========\n%s\n",res );
+         }
+       }
+     }
+
+
      if ( (nsndClient = write (clientfd, msgAll, msgSize) ) <0 ) {
        printf ("servmulti : writen error on socket");
      }
@@ -151,7 +178,7 @@ int proxy(int clientfd) {
       printf("=====================================\n%s\n====================%d=================\n",msgAll,msgSize );
     }
 
-    printf("=======End=======\n" );
+
     close(serverfd);
 
   }while (nrcvClient > 0 );

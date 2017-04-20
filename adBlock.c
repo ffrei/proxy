@@ -1,4 +1,4 @@
-#include "adBloc.h"
+#include "adBlock.h"
 
 #define DIE(msg, ...) do { fprintf(stderr, msg, ##__VA_ARGS__); exit(EXIT_FAILURE); } while(0)
 
@@ -127,12 +127,13 @@ mystatus_t write_output(const char* data, size_t len, void* ctx)
 	if (exitString) {
 		strcpy(exitString, data);
 		//printf("%s\n", exitString);
-	}	
+	}
     return MyCORE_STATUS_OK;
 }
 
-char* cleanAd(struct res_html data) {
-  
+char* cleanAd(char* startChar, size_t size) {
+
+  struct res_html data= {startChar, size};
   //struct res_html data = load_html_file(entry); //changement de fonction à realiser
   mystatus_t res;
 
@@ -168,17 +169,3 @@ char* cleanAd(struct res_html data) {
   myhtml_destroy(myhtml);
   return data.html;
 }
-
-int main(int argc,char *argv[]){
-	if (argc != 2) {
-	    usage();
-	    DIE("Invalid number of arguments\n");	
-	}
-	char* startChar = "<!DOCTYPE html><html><body><p > bonjour</p><script>document.innerHTML;<script></body></html>";
-	struct res_html data = {startChar, (size_t)strlen(startChar)};	
-	char* endChar = cleanAd(data);
-	printf("%s\n", endChar);
-	return 0;
-
-}
-
