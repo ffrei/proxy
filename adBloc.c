@@ -1,13 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdbool.h>
-
-#include "myhtml-4.0.0/source/myhtml/api.h"
-
-#include "myhtml-4.0.0/examples/myhtml/example.h"
+#include "adBloc.h"
 
 #define DIE(msg, ...) do { fprintf(stderr, msg, ##__VA_ARGS__); exit(EXIT_FAILURE); } while(0)
+
+char* exitString;
 
 char* classKey = "class";
 char* addValue = "onf-ad";
@@ -128,17 +123,17 @@ static void usage(void)
 
 mystatus_t write_output(const char* data, size_t len, void* ctx)
 {
-    printf("%.*s", (int)len, data);
+	exitString = malloc(strlen(data)+1);
+	if (exitString) {
+		strcpy(exitString, data);
+		//printf("%s\n", exitString);
+	}	
     return MyCORE_STATUS_OK;
 }
 
-int main(int argc,char *argv[]) {
-  if (argc != 2) {
-    usage();
-    DIE("Invalid number of arguments\n");
-  }
-
-  struct res_html data = load_html_file(argv[1]);
+char* cleanAd(struct res_html data) {
+  
+  //struct res_html data = load_html_file(entry); //changement de fonction à realiser
   mystatus_t res;
 
 	// basic init
@@ -165,15 +160,25 @@ int main(int argc,char *argv[]) {
 
   // parse html
   myhtml_parse(tree, MyENCODING_UTF_8, data.html, data.size);
-  printf("fin parse\n");
   walk_subtree(tree, myhtml_tree_get_node_html(tree), 0);
-  printf("fin subtree\n");
   printf("\n");
   myhtml_serialization_tree_callback(myhtml_tree_get_document(tree), write_output, NULL);
   // release resources
   myhtml_tree_destroy(tree);
   myhtml_destroy(myhtml);
-  free(data.html);
-
-  return EXIT_SUCCESS;
+  return data.html;
 }
+
+int main(int argc,char *argv[]){
+	if (argc != 2) {
+	    usage();
+	    DIE("Invalid number of arguments\n");	
+	}
+	char* startChar = "<!DOCTYPE html><html><body><p > bonjour</p><script>document.innerHTML;<script></body></html>";
+	struct res_html data = {startChar, (size_t)strlen(startChar)};	
+	char* endChar = cleanAd(data);
+	printf("%s\n", endChar);
+	return 0;
+
+}
+

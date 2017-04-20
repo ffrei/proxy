@@ -1,3 +1,9 @@
-Modifs à faire:
-dans le terminal: export LD_LIBRARY_PATH=/usr/local/lib/
-compilation : gcc -Wall -o adBloc adBloc.c -L/home/bulle/Bureau/proxy/myhtml-4.0.0/lib -lmyhtml-4.0.0
+Pour avoir une chance de faire tourner le bordel voici qqs trucs à faire:
+°) aller dans le dossier myhtml-4.0.0 et lancer: "make install"
+°) dans le terminal: "export LD_LIBRARY_PATH=/usr/local/lib/"
+°) pour la compilation : "gcc -Wall -o adBloc adBloc.c -L/home/bulle/Bureau/proxy/myhtml-4.0.0/lib -lmyhtml-4.0.0"
+°) pour le lancement: "./adBloc 01net.html"
+
+Le test qui fonctionne à symplement envoyer dans un navigateur: marche.html, ctrl-U, faire une recherche pour "onf-ad"...magie..yen a pas :D
+
+Un jour il faudra changer adBloc en adBlock :p
