@@ -12,7 +12,7 @@
 #include <netdb.h> //hostent
 #include "adBlock.h"
 
-#define BUFSIZE 2048
+#define BUFSIZE 1024
 #define LOG 0 // 0 -> pas tout les logs ; 1 log activé
 #define TIMEOUT 15
 
@@ -132,7 +132,8 @@ int proxy(int clientfd) {
          }
 
          memset( (char*) msg, 0, BUFSIZE   );
-         nrcvServ= read ( serverfd, msg, BUFSIZE-1) ;
+         nrcvServ= read ( serverfd, msg,sizeof(msg)-1)  ;
+
          if ( nrcvServ < 0 )  {
            perror ("servmulti : readn error on socket");
            return (1);
@@ -158,16 +159,34 @@ int proxy(int clientfd) {
      }
      //msgAll[msgSize]='\0';
 
+     printf("%d : is HTML ?\n",getpid() );
      if( strstr(msgAll,"Content-Type: text/html") ){
-       char * data= strstr(msgAll,"<!DOCTYPE html>");
+       printf("%d : yes; get doctype \n",getpid() );
+
+       char * data= strstr(msgAll,"\r\n\r\n");
+       printf("============in : ==========\n%s\n",data );
        if(data){
-         char* res=cleanAd(data,msgSize-(data-msgAll));
+         printf("%d : yes clean it :P \n",getpid() );
+
+         printf("============out : %ld ==========\n%s\n",strlen(msgAll),msgAll  );
+         char* res=cleanAd(data,msgSize-(data-msgAll))+9; // le +9 permet de retirer le "<-undef>"
          if(res){
-           printf("============out : ==========\n%s\n",res );
+           printf("============out : %ld ==========\n%s\n",strlen(res),res  );
+           char buffer[5];
+           char * contentLength=strstr(msgAll,"Content-Length");
+           itoa(strlen(res),buffer,10);
+           strcpy(contentLength+15,buffer);
+           /*
+           Header ( changer la taille du contenu)
+           suivi de \r\n\r\n
+           suivi du contenu
+
+           */
+           printf("============out : %ld ==========\n%s\n",strlen(msgAll),msgAll  );
          }
        }
      }
-
+     printf("%d : no ?\n",getpid() );
 
      if ( (nsndClient = write (clientfd, msgAll, msgSize) ) <0 ) {
        printf ("servmulti : writen error on socket");

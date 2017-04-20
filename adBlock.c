@@ -3,7 +3,7 @@
 #define DIE(msg, ...) do { fprintf(stderr, msg, ##__VA_ARGS__); exit(EXIT_FAILURE); } while(0)
 
 char* exitString;
-
+int exitStringSize;
 char* classKey = "class";
 char* addValue = "onf-ad";
 
@@ -76,17 +76,28 @@ struct res_html {
     size_t size;
 };
 
-mystatus_t write_output(const char* data, size_t len, void* ctx)
-{
-	exitString = malloc(strlen(data)+1);
-	if (exitString) {
-		strcpy(exitString, data);
+mystatus_t write_output(const char* data, size_t len, void* ctx){
+
+
+	char* exitString_tmp = (char*)realloc(exitString,(exitStringSize+len)* sizeof(char));
+  if(exitString_tmp==NULL){
+    printf("The re-allocation of array a has failed");
+  }else{
+    exitString=exitString_tmp;
+    int i;
+		for(i=0;i<len;i++){
+      exitString[exitStringSize+i]=data[i];
+    }
 	}
-    return MyCORE_STATUS_OK;
+
+  exitStringSize+=len;
+  return MyCORE_STATUS_OK;
 }
 
 char* cleanAd(char* startChar, size_t size) {
-
+  exitString=malloc(1);
+  exitString[0]=' ';
+  exitStringSize=1;
   struct res_html data= {startChar, size};
   mystatus_t res;
 
@@ -115,10 +126,11 @@ char* cleanAd(char* startChar, size_t size) {
   // parse html
   myhtml_parse(tree, MyENCODING_UTF_8, data.html, data.size);
   walk_subtree(tree, myhtml_tree_get_node_html(tree), 0);
-  printf("\n");
   myhtml_serialization_tree_callback(myhtml_tree_get_document(tree), write_output, NULL);
+
   // release resources
   myhtml_tree_destroy(tree);
   myhtml_destroy(myhtml);
-  return data.html;
+
+  return exitString;
 }
