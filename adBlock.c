@@ -76,57 +76,11 @@ struct res_html {
     size_t size;
 };
 
-struct res_html load_html_file(const char* filename)
-{
-    FILE *fh = fopen(filename, "rb");
-    if(fh == NULL) {
-        DIE("Can't open html file: %s\n", filename);
-    }
-
-    if(fseek(fh, 0L, SEEK_END) != 0) {
-        DIE("Can't set position (fseek) in file: %s\n", filename);
-    }
-
-    long size = ftell(fh);
-
-    if(fseek(fh, 0L, SEEK_SET) != 0) {
-        DIE("Can't set position (fseek) in file: %s\n", filename);
-    }
-
-    if(size <= 0) {
-        fclose(fh);
-
-        struct res_html res = {NULL, 0};
-        return res;
-    }
-
-    char *html = (char*)malloc(size + 1);
-    if(html == NULL) {
-        DIE("Can't allocate mem for html file: %s\n", filename);
-    }
-
-    size_t nread = fread(html, 1, size, fh);
-    if (nread != size) {
-        DIE("could not read %ld bytes (" MyCORE_FMT_Z " bytes done)\n", size, nread);
-    }
-
-    fclose(fh);
-
-    struct res_html res = {html, (size_t)size};
-    return res;
-}
-
-static void usage(void)
-{
-    fprintf(stderr, "html2sexpr <file>\n");
-}
-
 mystatus_t write_output(const char* data, size_t len, void* ctx)
 {
 	exitString = malloc(strlen(data)+1);
 	if (exitString) {
 		strcpy(exitString, data);
-		//printf("%s\n", exitString);
 	}
     return MyCORE_STATUS_OK;
 }
@@ -134,7 +88,6 @@ mystatus_t write_output(const char* data, size_t len, void* ctx)
 char* cleanAd(char* startChar, size_t size) {
 
   struct res_html data= {startChar, size};
-  //struct res_html data = load_html_file(entry); //changement de fonction à realiser
   mystatus_t res;
 
 	// basic init
