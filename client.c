@@ -11,6 +11,7 @@
 #include <errno.h> //For errno - the error number
 #include <netdb.h> //hostent
 #include "adBlock.h"
+#include "utils.h"
 
 #define BUFSIZE 1024
 #define LOG 0 // 0 -> pas tout les logs ; 1 log activé
@@ -157,36 +158,34 @@ int proxy(int clientfd) {
        msgAll="HTTP/1.1 500 Internal Server Error \r\n";
        msgSize=strlen(msgAll);
      }
-     //msgAll[msgSize]='\0';
 
-     printf("%d : is HTML ?\n",getpid() );
      if( strstr(msgAll,"Content-Type: text/html") ){
-       printf("%d : yes; get doctype \n",getpid() );
 
        char * data= strstr(msgAll,"\r\n\r\n");
-       printf("============in : ==========\n%s\n",data );
-       if(data){
-         printf("%d : yes clean it :P \n",getpid() );
 
-         printf("============out : %ld ==========\n%s\n",strlen(msgAll),msgAll  );
+       if(data){
          char* res=cleanAd(data,msgSize-(data-msgAll))+9; // le +9 permet de retirer le "<-undef>"
          if(res){
-           printf("============out : %ld ==========\n%s\n",strlen(res),res  );
-           char buffer[5];
-           char * contentLength=strstr(msgAll,"Content-Length");
-           itoa(strlen(res),buffer,10);
-           strcpy(contentLength+15,buffer);
            /*
-           Header ( changer la taille du contenu)
-           suivi de \r\n\r\n
-           suivi du contenu
+           printf("============out2.0 \n" );
+           printAll(msgAll);
+           printf("\n" );*/
 
-           */
-           printf("============out : %ld ==========\n%s\n",strlen(msgAll),msgAll  );
+           int bufferSize=msgSize+512;
+           char buffer[bufferSize];
+           char * contentLength=strstr(msgAll,"Content-Length");
+           printf("%s\n",contentLength );
+
+           itoa(strlen(res),buffer,bufferSize);
+           int offset=strlen("Content-Length :");
+
+           strcat(buffer,"\r\n\r\n");
+           strcat(buffer,res);
+
+           strcpy(contentLength+offset,buffer);
          }
        }
      }
-     printf("%d : no ?\n",getpid() );
 
      if ( (nsndClient = write (clientfd, msgAll, msgSize) ) <0 ) {
        printf ("servmulti : writen error on socket");
@@ -194,9 +193,10 @@ int proxy(int clientfd) {
 
     if(LOG){
       msgAll[msgSize]='\0';
-      printf("=====================================\n%s\n====================%d=================\n",msgAll,msgSize );
+      printf("=======================================\n");
+      printAll(msgAll);
+      printf("====================%d=================\n",msgSize);
     }
-
 
     close(serverfd);
 

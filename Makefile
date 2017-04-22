@@ -1,5 +1,8 @@
-all: adBlock client server  main
-	gcc server.o main.o adBlock.o client.o -o main -Lmyhtml-4.0.0/lib -lmyhtml-4.0.0
+all: utils adBlock client server main
+	gcc utils.o server.o main.o adBlock.o client.o -o main -Lmyhtml-4.0.0/lib -lmyhtml-4.0.0
+
+utils: utils.c
+	gcc -Wall -c -o utils.o utils.c
 
 adBlock: adBlock.c
 	gcc -Wall -c -o adBlock.o adBlock.c
