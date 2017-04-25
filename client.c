@@ -13,23 +13,91 @@
 #include "adBlock.h"
 #include "utils.h"
 
-#define BUFSIZE 1024
+#define BUFSIZE 64
 #define LOG 0 // 0 -> pas tout les logs ; 1 log activé
 #define TIMEOUT 15
 
-int proxy(int clientfd) {
-  int nrcvServ,nrcvClient, nsndServ, nsndClient , msgSize;
-  char msg[BUFSIZE];
-  char msgCpy[BUFSIZE];
-  char *hostname,*tmp,*msgAll ,*url;
-  printf("#####%d#####\n",getpid() );
-  do{
-    if(LOG){
-        printf("#####%d####### Waiting For Client  ##############\n",getpid() );
+
+char* myRead(int fd,int *size,int length){
+
+  char msg[1];
+  int end = 0,nrcv,allocated;
+  allocated=BUFSIZE;
+  char* msgAll=(char*)malloc(allocated);
+
+  msgAll[0]='\0';
+  *size=1;
+
+
+  if(length==0){
+    char* msgAll=(char*)malloc(1);
+    *size=1;
+    msgAll[0]='\0';
+    return msgAll;
+  }
+
+  if(length>0){
+    char* msgAll=(char*)malloc(length+1);
+    memset( (char*) msgAll, 0, length+1   );
+    *size= read ( fd, msgAll,length);
+
+    msgAll[*size]='\0';
+
+    while (*size<length) {
+      memset( (char*) msg, 0, 1   );
+      nrcv= read ( fd, msg,1)  ;
+
+      *size+=nrcv;
+      strcat(msgAll,msg);
+    }
+    msgAll[*size]='\0';
+    return msgAll;
+  }
+
+
+  while (!end) {
+    memset( (char*) msg, 0, 1   );
+    nrcv= read ( fd, msg,1)  ;
+
+    *size+=nrcv;
+    if(*size==allocated-1){
+      allocated+=BUFSIZE;
+
+      char* tmp_msgAll= (char*)realloc(msgAll,allocated * sizeof(char));
+      if(tmp_msgAll==NULL){
+        printf("The re-allocation of array a has failed");
+      }
+      msgAll=tmp_msgAll;
     }
 
-    memset( (char*) msg, 0, BUFSIZE );
-    nrcvClient= read ( clientfd, msg, BUFSIZE-1) ;
+    strcat(msgAll,msg);
+
+    char * ptr=strstr( msgAll,"\r\n\r\n");
+    if(ptr){
+      end=1;
+      strcpy(ptr+strlen("\r\n\r\n"),"\0");
+    }
+  }
+  /*
+  printf("=================================================\n" );
+  printAll(msgAll);
+  printf("=================================================\n" );*/
+  return msgAll;
+}
+
+
+int proxy(int clientfd) {
+  int nrcvClient, nsndServ, nsndClient ;
+  char* msg;
+  char* msgCpy;
+  char *hostname,*tmp,*msgAll ,*url;
+  printf("##### pid:%d && fd:%d #####\n",getpid(),clientfd );
+  do{
+    if(LOG){
+        //printf("#####%d####### Waiting For Client  ##############\n",getpid() );
+    }
+
+    msg=myRead(clientfd,&nrcvClient,-1);
 
     if(nrcvClient < 0){
       perror ("servmulti : readn error on socket");
@@ -40,10 +108,12 @@ int proxy(int clientfd) {
     }
 
     if(LOG){
-      msg[nrcvClient]='\0';
-      printf("==============REQUETE RECU=======================\n%s\n====================%d=================\n",msg,nrcvClient );
+      printf("==============REQUETE RECU=======================\n" );
+      printAll(msg);
+      printf("=================================================\n" );
     }
 
+    msgCpy=(char*)malloc(nrcvClient);
     strcpy(msgCpy,msg);
     url=strstr(msgCpy,"http://");
     tmp =strstr(url,"HTTP/1");
@@ -103,99 +173,85 @@ int proxy(int clientfd) {
       exit (1);
     }
 
-    msgAll=(char*)malloc(1 * sizeof(char));
-    msgAll[0]='\0';
-    msgSize=1;
 
-    fd_set rfds;
-    struct timeval tv;
-    int retval;
+    int headerSize=0;
+    int contentSize=0;
+    char* header;
+    char* content;
 
-    /* Watch stdin (fd 0) to see when it has input. */
-    FD_ZERO(&rfds);
-    FD_SET(serverfd, &rfds);
+    header=myRead(serverfd,&headerSize,-1);
+    if(LOG){
+      printf("==============HEADER===================\n");
+      printAll(header);
+      printf("=======================================\n");
+    }
 
-    do{
-        tv.tv_sec = TIMEOUT;
-        tv.tv_usec = 0;
-        retval = select(serverfd+1, &rfds, NULL, NULL, &tv);
-         /* Don’t rely on the value of tv now! */
-         if (retval == -1){
-           perror("select()");
-         }else if (!retval){
-           printf("%d: timed out : %s current size : %d\n",getpid(),url,msgSize);
-           nrcvServ=0;
-         }else{
-         /* FD_ISSET(0, &rfds) will be true. */
+    char * contentLength=strstr(header,"Content-Length");
 
-         if(LOG){
-            printf("#####%d####### Waiting For Server  ########%d######\n",getpid(),msgSize );
-         }
+    int length=-1;
+    if(contentLength){
+          int offset=strlen("Content-Length :");
+          printf("Length : %d\n", atoi(contentLength+offset));
+          length=atoi(contentLength+offset);
+    }
 
-         memset( (char*) msg, 0, BUFSIZE   );
-         nrcvServ= read ( serverfd, msg,sizeof(msg)-1)  ;
+    content=myRead(serverfd,&contentSize,length);
+    if(LOG){
+      printf("==============Content==================\n");
+      printAll(content);
+      printf("=======================================\n");
+    }
 
-         if ( nrcvServ < 0 )  {
-           perror ("servmulti : readn error on socket");
-           return (1);
-         }else{
-           msgSize+=nrcvServ;
-           //printf("New size  : %d \n",msgSize );
-           char* tmp_msgAll= (char*)realloc(msgAll,msgSize * sizeof(char));
-           if(tmp_msgAll==NULL){
-             printf("The re-allocation of array a has failed");
-           }
-           msgAll=tmp_msgAll;
+    char* buffer=malloc(headerSize+strlen(content)+2*strlen("\r\n\r\n"));
 
-           //printf("############   ##############\n" );
-           strcat(msgAll,msg);
+    if( strstr(header,"Content-Type: text/html") ){
 
-         }
-       }
-     }while(nrcvServ>0);
+       char* content_tmp=cleanAd(content,contentSize)+9; // le +9 permet de retirer le "<-undef>"
 
-     if( msgSize < 100 ){
-       msgAll="HTTP/1.1 500 Internal Server Error \r\n";
-       msgSize=strlen(msgAll);
-     }
+       if(content_tmp){
 
-     if( strstr(msgAll,"Content-Type: text/html") ){
+         //init buffer
+         int bufferSize=headerSize+strlen(content_tmp)+strlen("\r\n\r\n")+1;
+         buffer=malloc(bufferSize);
 
-       char * data= strstr(msgAll,"\r\n\r\n");
+         //copie du header dans le buffer
+         strcpy(buffer,header);
 
-       if(data){
-         char* res=cleanAd(data,msgSize-(data-msgAll))+9; // le +9 permet de retirer le "<-undef>"
-         if(res){
-           /*
-           printf("============out2.0 \n" );
-           printAll(msgAll);
-           printf("\n" );*/
+         //conversion len(content_tmp) en str
+         int buff2size=10;
+         char* buff2=malloc(buff2size);
+         itoa(strlen(content_tmp),buff2,buff2size);
 
-           int bufferSize=msgSize+512;
-           char buffer[bufferSize];
-           char * contentLength=strstr(msgAll,"Content-Length");
-           printf("%s\n",contentLength );
-
-           itoa(strlen(res),buffer,bufferSize);
+         //recup d'un pointeur pour changer la taille
+         char * contentLength=strstr(buffer,"Content-Length");
+         if(contentLength){
            int offset=strlen("Content-Length :");
-
+           strcpy(contentLength+offset,buff2);
            strcat(buffer,"\r\n\r\n");
-           strcat(buffer,res);
-
-           strcpy(contentLength+offset,buffer);
          }
+         //ajout du contenu au buffer
+         strcat(buffer,content_tmp);
+       }
+
+     }else{
+       if(buffer){
+         strcpy(buffer,header);
+         strcat(buffer,content);
        }
      }
 
-     if ( (nsndClient = write (clientfd, msgAll, msgSize) ) <0 ) {
+
+
+     msgAll=buffer;
+
+     if ( (nsndClient = write (clientfd, msgAll, strlen(msgAll)) ) <0 ) {
        printf ("servmulti : writen error on socket");
      }
 
     if(LOG){
-      msgAll[msgSize]='\0';
-      printf("=======================================\n");
+      printf("===========HEADER et Content apres adblock====================\n");
       printAll(msgAll);
-      printf("====================%d=================\n",msgSize);
+      printf("=======================================\n");
     }
 
     close(serverfd);
