@@ -14,7 +14,7 @@
 #include "utils.h"
 
 #define BUFSIZE 64
-#define LOG 0 // 0 -> pas tout les logs ; 1 log activé
+#define LOG 1 // 0 -> pas tout les logs ; 1 log activé
 #define TIMEOUT 15
 
 

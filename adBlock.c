@@ -14,31 +14,7 @@ static bool filter_node(myhtml_tree_node_t* node)
     return (tag != MyHTML_TAG__TEXT) && (tag != MyHTML_TAG__END_OF_FILE) && (tag != MyHTML_TAG__COMMENT) && (tag != MyHTML_TAG__UNDEF);
 }
 
-static bool compare(char* value)
-{
-  FILE * fp;
-  char * line = NULL;
-  size_t len = 0;
-  ssize_t read;
-  char* valueChar;
-  strcpy(valueChar, value);
-  fp = fopen("easylist.txt", "r");
-  if (fp == NULL){
-    exit(EXIT_FAILURE);
-  }
-  while ((read = getline(&line, &len, fp)) != -1) {
-      if (strstr(line, valueChar)) {
-        printf("J'ai trouvé un point commun !!!\n");
-        return true;
-      }
-  }
-  fclose(fp);
-  if (line) {
-    free(line);
-  }
-  return false;
-}
-
+/* depth-first lefthand tree walk */
 static void walk_subtree(myhtml_tree_t* tree, myhtml_tree_node_t* root, int level)
 {
     if (!root) {
@@ -52,6 +28,10 @@ static void walk_subtree(myhtml_tree_t* tree, myhtml_tree_node_t* root, int leve
         return;
     }
 
+    /* start sexpr */
+    //putchar('(');
+
+    /* print this node */
     //printf("%s ", myhtml_tag_name_by_id(tree, myhtml_node_tag_id(root), NULL));
     myhtml_tree_attr_t* attr = myhtml_node_attribute_first(root);
     while (attr != NULL) {
@@ -60,11 +40,18 @@ static void walk_subtree(myhtml_tree_t* tree, myhtml_tree_node_t* root, int leve
         const char *value = myhtml_attribute_value(attr, NULL);
 
         if ((key!=NULL) && (value!=NULL)) {
-          if((strcmp(key, classKey)==0) && compare(value)) {
+          if((strcmp(key, classKey)==0) && (strcmp(value, addValue)==0)) {
             myhtml_node_delete_recursive(root);
             root = NULL;
           }
         }
+        /*if (key==NULL)
+            printf("(KEY IS NULL)");
+        else if (value)
+            printf("(%s \'%s\')", key, value);
+        else
+            printf("(%s)", key);*/
+
         attr = myhtml_attribute_next(attr);
     }
 
