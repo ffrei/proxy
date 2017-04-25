@@ -1,19 +1,18 @@
-
 Préparation :
   Dans Firefox :
     aller a la page : "about:config"
       rechercher network.http.accept-encoding et modifer la valeur de "gzip, deflate" a "" (vide)
     aller a la page : "about:preferences#advanced" > Réseau > Paramètres > Configuration manuelle
-      replisses avec votre adresse ip (127.0.0.1) et le port (par exemple 8080)
+      remplissez avec votre adresse ip (127.0.0.1) et le port (par exemple 8080)
   Pour installer/compiler la librairie :
     aller dans le dossier "myhtml-4.0.0"
       "sudo make install"
   Finalement :
-    ajouter LD_LIBRARY_PATH=/usr/local/lib/ a vos variable d'environnement
+    ajouter LD_LIBRARY_PATH=/usr/local/lib/ a vos variables d'environnement
       "export LD_LIBRARY_PATH=/usr/local/lib/"
 
 Compilation :
   "make"
 
 Exécution :
-  "./main 8080"
+  "./main 8080" (même port que celui renseigné précédemment)
